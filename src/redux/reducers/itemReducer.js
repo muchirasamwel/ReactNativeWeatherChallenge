@@ -1,21 +1,17 @@
-import * as type from "../constants/action-types"
+import * as type from '../constants/action-types';
 
 const initialState = {
     coordinates:{},
     place:'',
-    items: [],
-    authors:[{name:'hen'}],
+    weather: {},
+
 };
 
 function rootReducer(state = initialState, action) {
     switch (action.type) {
-        case type.FETCH_ITEMS:
+        case type.FETCH_WEATHER:
             return Object.assign({}, state, {
-                items:action.items
-            });
-        case type.ADD_ITEM:
-            return Object.assign({}, state, {
-                items: state.items.concat(action.item)
+                weather: action.weather
             });
         case type.FETCH_COORDINATES:
             return Object.assign({}, state, {
@@ -24,11 +20,6 @@ function rootReducer(state = initialState, action) {
         case type.FETCH_PLACE:
             return Object.assign({}, state, {
                 place: action.place
-            });
-        case type.DELETE_ITEM:
-            alert("Item Deleted successfully");
-            return Object.assign({}, state, {
-                items: state.items.filter(item => item.id !== action.id)
             });
         default:
             return state;

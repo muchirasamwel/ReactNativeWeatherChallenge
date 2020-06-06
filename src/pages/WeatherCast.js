@@ -1,22 +1,23 @@
 import React from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity, FlatList, TextInput, ScrollView, Alert} from 'react-native';
-import {bindActionCreators} from "redux";
-import * as itemActions from "../redux/actions/itemActions";
-import {connect} from "react-redux";
-import GetLocation from 'react-native-get-location'
-import {Styles} from "./Styles";
-import MapView, {Marker} from "react-native-maps";
-import Loader from "../components/Loader";
-import Icon from "react-native-vector-icons/dist/MaterialIcons";
-import Geocoder from "react-native-geocoding";
+import {View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert} from 'react-native';
+import {bindActionCreators} from 'redux';
+import * as itemActions from '../redux/actions/itemActions';
+import {connect} from 'react-redux';
+import GetLocation from 'react-native-get-location';
+import {Styles} from './Styles';
+import MapView, {Marker} from 'react-native-maps';
+import Loader from '../components/Loader';
+import Icon from 'react-native-vector-icons/dist/MaterialIcons';
+import Geocoder from 'react-native-geocoding';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-class GpsAndMaps extends React.Component {
+class WeatherCast extends React.Component {
     state = {
         search: '',
         marker: {
             title: '',
             description: '',
-            street: ''
+            street: '',
         },
         location: {
             latitude: 37.78825,
@@ -33,7 +34,7 @@ class GpsAndMaps extends React.Component {
     };
     onRegionChange = (region) => {
         this.setState({new_region: region});
-    }
+    };
 
     findCoordinates = async () => {
         this.setState({loading: true});
@@ -42,7 +43,7 @@ class GpsAndMaps extends React.Component {
             timeout: 15000,
         })
             .then(location => {
-                this.setState({location: location})
+                this.setState({location: location});
                 this.setState({
                     region: {
                         latitude: location.latitude,
@@ -62,47 +63,54 @@ class GpsAndMaps extends React.Component {
             });
         this.setState({loading: false});
     };
-    getLocation= async ()=>{
+    getLocation = async () => {
         this.setState({loading: true});
 
         await this.props.actions.fetchLocation(this.state.search).catch(err => {
             this.setState({loading: false});
-            Alert.alert('Error','loading location failed ')
+            Alert.alert('Error', 'loading location failed ');
         });
-        if(this.props.coordinates.data.length<1){
+        if (this.props.coordinates.data.length < 1) {
             this.setState({loading: false});
-            Alert.alert('No results','Please Try again with a different place');
-            return ;
+            Alert.alert('No results', 'Please Try again with a different place');
+            return;
         }
         this.setState({
             marker: {
                 title: this.props.coordinates.data[0].name,
                 description: this.props.coordinates.data[0].region + ', ' + this.props.coordinates.data[0].country,
                 street: this.props.coordinates.data[0].street,
-            }
+            },
         });
-        let coordinates={
-            latitude:this.props.coordinates.data[0].latitude,
-            longitude:this.props.coordinates.data[0].longitude,
-        }
-        this.setState({location:coordinates})
-        this.moveTo(coordinates)
+        let coordinates = {
+            latitude: this.props.coordinates.data[0].latitude,
+            longitude: this.props.coordinates.data[0].longitude,
+        };
+        await this.props.actions.fetchWeather(coordinates.latitude,coordinates.longitude).catch(err => {
+            this.setState({loading: false});
+            Alert.alert('Error', 'Fetch weather failed ');
+            console.log(err);
+        });
+        console.log(this.props.weather);
+        this.setState({location: coordinates});
+        this.moveTo(coordinates);
         this.setState({loading: false});
 
-    }
-    moveTo=(coordinates)=>{
+    };
+    moveTo = (coordinates) => {
         let region = {
             latitude: coordinates.latitude,
             longitude: coordinates.longitude,
-            latitudeDelta: this.state.new_region.latitudeDelta ,
-            longitudeDelta: this.state.new_region.longitudeDelta ,
+            latitudeDelta: this.state.new_region.latitudeDelta,
+            longitudeDelta: this.state.new_region.longitudeDelta,
         };
         this._mapView.animateToRegion(
             region
             , 100);
-    }
+    };
+
     componentDidMount(): void {
-        Geocoder.init("AIzaSyDSbvpfxv_ZeLBCvfdtqP8FPunDe0Gg3MA");
+        Geocoder.init('AIzaSyDSbvpfxv_ZeLBCvfdtqP8FPunDe0Gg3MA');
         this.findCoordinates();
 
     };
@@ -117,7 +125,7 @@ class GpsAndMaps extends React.Component {
         this._mapView.animateToRegion(
             region
             , 100);
-    }
+    };
     mapZoomOut = () => {
         let region = {
             latitude: this.state.new_region.latitude,
@@ -131,34 +139,40 @@ class GpsAndMaps extends React.Component {
             , 100);
     };
 
-    getPlaceInfo = (position) => {
+    getPlaceInfo = async (position) => {
+        this.setState({loading: true});
+
         let coordinate = position.nativeEvent.coordinate;
+        await this.props.actions.fetchWeather(coordinate.latitude,coordinate.longitude).catch(err => {
+            this.setState({loading: false});
+            Alert.alert('Error', 'Fetch weather failed ');
+            console.log(err);
+        });
+        console.log(this.props.weather);
         this.setMarker(coordinate);
-    }
+        this.setState({loading: false});
+    };
     setMarker = async (coordinate) => {
         this.setState({location: coordinate});
-        await this.props.actions.fetchPlace(coordinate.latitude + "," + coordinate.longitude).catch(err => {
-            alert('loading items failed ' + err)
+        await this.props.actions.fetchPlace(coordinate.latitude + ',' + coordinate.longitude).catch(err => {
+            alert('loading items failed ' + err);
         });
-        // for(let data in this.props.place.data){
-        //     console.log(this.props.place.data[data].confidence)
-        // }
-        // console.log('=======================')
-        if(this.props.place.data[0].length<1){
-            Alert.alert('Unknown Place','Sorry We dont have any info on this place. Try another place');
+        if (this.props.place.data[0].length < 1) {
+            Alert.alert('Unknown Place', 'Sorry We dont have any info on this place. Try another place');
         }
         this.setState({
             marker: {
                 title: this.props.place.data[0].name,
                 description: this.props.place.data[0].region + ', ' + this.props.place.data[0].country,
                 street: this.props.place.data[0].street,
-            }
+            },
         });
         // console.log(this.props.place);
     };
-    searchChanged=(search)=>{
-        this.setState({search})
-    }
+    searchChanged = (search) => {
+        this.setState({search});
+    };
+
     render() {
         return (
             <View style={styles.container}>
@@ -166,18 +180,18 @@ class GpsAndMaps extends React.Component {
                     <Loader preLoaderVisible={this.state.loading}/>
                     <View style={Styles.search_nav}>
                         <TouchableOpacity onPress={this.findCoordinates} style={Styles.successBtn}>
-                            <Icon name="place" color="black" size={25}/>
+                            <Icon name='place' color='black' size={25}/>
                         </TouchableOpacity>
                         <View style={Styles.search_container}>
                             <TextInput
-                                placeholder="Search"
+                                placeholder='Search'
                                 style={Styles.input}
                                 value={this.state.search}
                                 onChangeText={this.searchChanged}
                             />
                         </View>
                         <TouchableOpacity style={Styles.primaryBtn} onPress={() => this.getLocation()}>
-                            <Icon name="search" color="white" size={25}/>
+                            <Icon name='search' color='white' size={25}/>
                         </TouchableOpacity>
                     </View>
 
@@ -185,10 +199,10 @@ class GpsAndMaps extends React.Component {
                     {/*<Text>Longitude: {this.state.location.longitude}</Text>*/}
                     <View style={Styles.map}>
                         <TouchableOpacity style={Styles.floatingZoomIn} onPress={this.mapZoomIn}>
-                            <Icon name="add-circle" color="black" size={35}/>
+                            <Icon name='add-circle' color='black' size={35}/>
                         </TouchableOpacity>
                         <TouchableOpacity style={Styles.floatingZoomOut} onPress={this.mapZoomOut}>
-                            <Icon name="remove-circle" color="black" size={35}/>
+                            <Icon name='remove-circle' color='black' size={35}/>
                         </TouchableOpacity>
                         <MapView
                             ref={(mapView) => {
@@ -202,7 +216,7 @@ class GpsAndMaps extends React.Component {
                             <Marker
                                 coordinate={{
                                     latitude: this.state.location.latitude,
-                                    longitude: this.state.location.longitude
+                                    longitude: this.state.location.longitude,
                                 }}
                                 title={this.state.marker.title}
                                 description={this.state.marker.description}
@@ -213,17 +227,24 @@ class GpsAndMaps extends React.Component {
                         </MapView>
                     </View>
                     <View style={Styles.place_container}>
+                        <Text style={Styles.place}>PLACE</Text>
                         <View style={Styles.row}>
-                            <Icon name="place" color="black" size={25}/>
-                            <Text style={Styles.place}>{this.state.marker.title}</Text>
+                            <Icon name='place' color='black' size={25}/>
+                            <Text style={Styles.place}>{this.state.marker.title},{this.state.marker.street}</Text>
                         </View>
                         <View style={Styles.row}>
-                            <Icon name="streetview" color="black" size={20}/>
-                            <Text style={Styles.street}>{this.state.marker.street}</Text>
-                        </View>
-                        <View style={Styles.row}>
-                            <Icon name="location-city" color="black" size={20}/>
+                            <Icon name='location-city' color='black' size={20}/>
                             <Text style={Styles.city_country}>{this.state.marker.description}</Text>
+                        </View>
+                    </View>
+                    <View style={Styles.place_container}>
+                        <Text style={Styles.place}>CURRENT WEATHER</Text>
+                        <View >
+                            <Text style={Styles.city_country}>General : {this.props.weather.current.weather[0].main}, {this.props.weather.current.weather[0].description}</Text>
+                            <Text style={Styles.city_country}>Temp: {(this.props.weather.current.temp-273.15).toFixed(2)} °C </Text>
+                            <Text style={Styles.city_country}>Humidity: {this.props.weather.current.humidity}</Text>
+                            <Text style={Styles.city_country}>Wind: {this.props.weather.current.wind_speed} km/h</Text>
+                            <Text style={Styles.city_country}>Cloud Coverage: {this.props.weather.current.clouds}</Text>
                         </View>
                     </View>
                 </ScrollView>
@@ -235,7 +256,7 @@ class GpsAndMaps extends React.Component {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white'
+        backgroundColor: 'white',
     },
 });
 
@@ -243,14 +264,18 @@ function mapStateToProps(state) {
     return {
         items: state.data.items,
         coordinates: state.data.coordinates,
-        place: state.data.place
-    }
+        place: state.data.place,
+        weather: state.data.weather,
+    };
 }
 
 function mapDispatchToProps(dispatch) {
     return {
-        actions: bindActionCreators(itemActions, dispatch)
-    }
+        actions: bindActionCreators(itemActions, dispatch),
+    };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(GpsAndMaps);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(WeatherCast);

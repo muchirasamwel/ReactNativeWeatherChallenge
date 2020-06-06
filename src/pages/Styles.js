@@ -3,15 +3,6 @@ const Height = Dimensions.get('window').height;
 
 export const Styles = StyleSheet.create({
 
-    avatar: {
-        width: '100%',
-        height: Height / 4,
-    },
-    imageList: {
-        width:'100%',
-        marginTop: 12,
-        //alignSelf: 'stretch',
-    },
     scroll: {
         width: '100%',
     },
@@ -73,7 +64,7 @@ export const Styles = StyleSheet.create({
         marginBottom: 2
     },
     map:{
-        height:Height/1.7,
+        height:Height/1.9,
         width:'100%',
         backgroundColor:'red'
     },
@@ -124,4 +115,5 @@ export const Styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
     },
+
 });
